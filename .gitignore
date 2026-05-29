@@ -142,3 +142,15 @@ examples/
 
 # archive files
 archive/
+
+# --- akylai: keep voice recordings & large artifacts OUT of the public repo ---
+training/akylai/device_clips/
+training/akylai/listen_real/
+training/akylai/device_analysis/
+training/**/*.npy
+training/**/*.parquet
+training/**/*.wav
+# upstream base-model download cache (re-downloaded via openwakeword.utils.download_models)
+openwakeword/resources/
+# keep our trained head model (small) — do NOT ignore it
+!training/akylai/models/akylai_real.onnx

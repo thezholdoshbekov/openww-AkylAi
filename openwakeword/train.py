@@ -868,8 +868,14 @@ if __name__ == '__main__':
             n_cpus = 1
         else:
             n_cpus = n_cpus//2
-        X_train = torch.utils.data.DataLoader(IterDataset(batch_generator),
-                                              batch_size=None, num_workers=n_cpus, prefetch_factor=16)
+        if os.name == 'nt':
+            # Windows spawns DataLoader workers and pickles the dataset; the lambda
+            # transforms in mmap_batch_generator aren't picklable, so load in-process.
+            X_train = torch.utils.data.DataLoader(IterDataset(batch_generator),
+                                                  batch_size=None, num_workers=0)
+        else:
+            X_train = torch.utils.data.DataLoader(IterDataset(batch_generator),
+                                                  batch_size=None, num_workers=n_cpus, prefetch_factor=16)
 
         X_val_fp = np.load(config["false_positive_validation_data_path"])
         X_val_fp = np.array([X_val_fp[i:i+input_shape[0]] for i in range(0, X_val_fp.shape[0]-input_shape[0], 1)])  # reshape to match model

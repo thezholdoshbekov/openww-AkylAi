@@ -1,0 +1,59 @@
+# openWakeWord training config for the Kyrgyz wake word «акылай» — CPU PILOT.
+# Synthetic generation is SKIPPED: clips are supplied by training/akylai/prepare_data.py.
+# Run from repo root:
+#   python openwakeword/train.py --training_config training/akylai/akylai.yml --augment_clips --train_model
+# (do NOT pass --generate_clips or --convert_to_tflite)
+
+model_name: akylai
+target_phrase:
+  - "акылай"            # cosmetic only; generation is skipped
+custom_negative_phrases: []
+
+# --- generation params (unused; kept for schema completeness) ---
+n_samples: 3000
+n_samples_val: 2736
+tts_batch_size: 50
+augmentation_batch_size: 16
+piper_sample_generator_path: "./training/akylai/_stub"
+
+# --- paths ---
+output_dir: "D:/akylai_oww/oww"
+
+# No reverb in the pilot (no RIR set downloaded).
+rir_paths: []
+
+# Background pool = podcast 2-s cuts + MUSAN noise/music (mixed in during augmentation).
+background_paths:
+  - "D:/akylai_oww/oww/backgrounds_wav"
+  - "D:/akylai_oww/oww/musan_wav"
+background_paths_duplication_rate:
+  - 1
+  - 1
+
+# General-purpose ~11h false-positive validation features (HF: davidscripka/openwakeword_features).
+false_positive_validation_data_path: "D:/akylai_oww/validation_set_features.npy"
+
+# One augmentation pass for the pilot.
+augmentation_rounds: 1
+
+# No extra negative feature sets (no ACAV100M). train.py auto-adds the computed
+# `positive` and `adversarial_negative` feature files.
+feature_data_files: {}
+batch_n_per_class:
+  positive: 50
+  adversarial_negative: 50
+
+# --- model ---
+model_type: "dnn"
+layer_size: 32
+
+# --- training (full) ---
+steps: 50000
+# NOTE: we have NO ACAV100M easy-negative pool and balanced 50/50 batches of HARD
+# negatives (podcast/confusables/real-voice). The default 1500 (designed for the
+# ACAV100M regime) crushes positives here -> recall collapses. Use a modest weight.
+max_negative_weight: 10
+# Set very high to DISABLE auto_train's weight-doubling: best_val_fp is never updated
+# (stays 1000), so `best_val_fp > target` is always true and the weight escalates
+# 1500->3000->6000. A huge target neutralizes that. FP is tuned via the threshold instead.
+target_false_positives_per_hour: 1000000
